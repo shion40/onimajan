@@ -74,14 +74,14 @@
         });
         table.appendChild(header);
 
-        // データ行の追加（L: index 11, M: index 12, N: index 13）
-        allRows.forEach((row, i) => {
+        // データ行の追加（3行目 = index 2 から下）
+        for (let i = 2; i < allRows.length; i++) {
+          const row = allRows[i];
           const rank = row[11]?.trim(); // L列
           const name = row[12]?.trim(); // M列
           const score = row[13]?.trim(); // N列
 
-          // 空白行はスキップ
-          if (!rank && !name && !score) return;
+          if (!rank && !name && !score) continue; // 空行スキップ
 
           const tr = document.createElement('tr');
           [rank, name, score].forEach(text => {
@@ -90,7 +90,7 @@
             tr.appendChild(td);
           });
           table.appendChild(tr);
-        });
+        }
       })
       .catch(error => {
         console.error('CSV読み込みエラー:', error);
