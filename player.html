@@ -72,7 +72,7 @@
   <table id="result-table" style="display:none;">
     <thead>
       <tr>
-        <th>名前</th><th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
+        <th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
         <th>3位</th><th>4位</th><th>プレイ数</th><th>役満回数</th>
       </tr>
     </thead>
@@ -84,13 +84,13 @@
   </div>
 
   <script>
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pubhtml?gid=354767114&single=true';
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
     let allRows = [];
 
     fetch(csvUrl)
       .then(res => res.text())
-      .then(csv => {
-        allRows = csv.trim().split('\n').map(r => r.split(','));
+      .then(text => {
+        allRows = text.trim().split('\n').map(row => row.split(','));
       });
 
     function searchPlayer() {
@@ -99,21 +99,28 @@
 
       const resultBody = document.getElementById('result-body');
       resultBody.innerHTML = '';
+      let found = false;
 
-      const player = allRows.find((row, index) => index > 0 && row[0] === name);
+      // 3行目以降からA列に一致する行を探す
+      for (let i = 2; i < allRows.length; i++) {
+        const row = allRows[i];
+        if (row[0]?.trim() === name) {
+          const tr = document.createElement('tr');
+          for (let j = 1; j <= 8; j++) {  // B列〜I列 = index 1〜8
+            const td = document.createElement('td');
+            td.textContent = row[j]?.trim() || '';
+            tr.appendChild(td);
+          }
+          resultBody.appendChild(tr);
+          found = true;
+          break;
+        }
+      }
 
-      if (player) {
-        const tr = document.createElement('tr');
-        player.slice(0, 9).forEach(cell => {
-          const td = document.createElement('td');
-          td.textContent = cell;
-          tr.appendChild(td);
-        });
-        resultBody.appendChild(tr);
-        document.getElementById('result-table').style.display = 'table';
-      } else {
-        resultBody.innerHTML = '<tr><td colspan="9">該当プレイヤーが見つかりませんでした</td></tr>';
-        document.getElementById('result-table').style.display = 'table';
+      document.getElementById('result-table').style.display = 'table';
+
+      if (!found) {
+        resultBody.innerHTML = '<tr><td colspan="8">該当プレイヤーが見つかりませんでした</td></tr>';
       }
     }
   </script>
