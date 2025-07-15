@@ -60,10 +60,25 @@
       .then(csv => {
         const allRows = csv.trim().split('\n').map(row => row.split(','));
 
+        // ヘッダー行を探して列位置を取得
+        const headerIndex = allRows.findIndex(row =>
+          row.includes('順位') && row.includes('名前') && row.includes('平均点')
+        );
+
+        if (headerIndex === -1) {
+          console.error('ヘッダーが見つかりませんでした');
+          return;
+        }
+
+        const headers = allRows[headerIndex];
+        const rankIdx = headers.indexOf('順位');
+        const nameIdx = headers.indexOf('名前');
+        const scoreIdx = headers.indexOf('平均点');
+
         const table = document.getElementById('ranking-table');
         table.innerHTML = '';
 
-        // 手動で見出し行を追加
+        // ヘッダー表示
         const header = document.createElement('tr');
         ['順位', '名前', '平均点'].forEach(text => {
           const th = document.createElement('th');
@@ -72,22 +87,24 @@
         });
         table.appendChild(header);
 
-        allRows.forEach((row, rowIndex) => {
-          // L列=11, M=12, N=13（0-index）
-          const cols = row.slice(11, 14);
+        // データ行を描画
+        for (let i = headerIndex + 1; i < allRows.length; i++) {
+          const row = allRows[i];
+          const rank = row[rankIdx]?.trim();
+          const name = row[nameIdx]?.trim();
+          const score = row[scoreIdx]?.trim();
 
-          // 空行をスキップ
-          if (cols.every(cell => cell.trim() === '')) return;
+          // 空行スキップ
+          if (!rank && !name && !score) continue;
 
-          // データ行の描画
           const tr = document.createElement('tr');
-          cols.forEach(cell => {
+          [rank, name, score].forEach(text => {
             const td = document.createElement('td');
-            td.textContent = cell;
+            td.textContent = text;
             tr.appendChild(td);
           });
           table.appendChild(tr);
-        });
+        }
       })
       .catch(error => {
         console.error('CSV読み込みエラー:', error);
