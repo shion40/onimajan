@@ -101,8 +101,8 @@
       resultBody.innerHTML = '';
       let found = false;
 
-      // 3行目以降からA列に一致する行を探す
-      for (let i = 2; i < allRows.length; i++) {
+      // 1行目以降からA列に一致する行を探す
+      for (let i = 0; i < allRows.length; i++) {
         const row = allRows[i];
         if (row[0]?.trim() === name) {
           const tr = document.createElement('tr');
