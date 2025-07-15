@@ -56,15 +56,16 @@
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?output=csv';
 
     fetch(csvUrl)
-      .then(response => response.text())
-      .then(csv => {
-        const allRows = csv.trim().split('\n').map(row => row.split(','));
+      .then(response => response.arrayBuffer()) // ← 文字化け対策：バイナリ取得
+      .then(buffer => {
+        const decoder = new TextDecoder('utf-8'); // ← UTF-8デコード
+        const text = decoder.decode(buffer);
+        const allRows = text.trim().split('\n').map(row => row.split(','));
 
-        // ヘッダー行を探して列位置を取得
+        // 「順位」「名前」「平均点」の列番号を自動で取得
         const headerIndex = allRows.findIndex(row =>
           row.includes('順位') && row.includes('名前') && row.includes('平均点')
         );
-
         if (headerIndex === -1) {
           console.error('ヘッダーが見つかりませんでした');
           return;
@@ -78,7 +79,7 @@
         const table = document.getElementById('ranking-table');
         table.innerHTML = '';
 
-        // ヘッダー表示
+        // 表のヘッダー行を追加
         const header = document.createElement('tr');
         ['順位', '名前', '平均点'].forEach(text => {
           const th = document.createElement('th');
@@ -87,14 +88,13 @@
         });
         table.appendChild(header);
 
-        // データ行を描画
+        // データ行を追加
         for (let i = headerIndex + 1; i < allRows.length; i++) {
           const row = allRows[i];
           const rank = row[rankIdx]?.trim();
           const name = row[nameIdx]?.trim();
           const score = row[scoreIdx]?.trim();
 
-          // 空行スキップ
           if (!rank && !name && !score) continue;
 
           const tr = document.createElement('tr');
