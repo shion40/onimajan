@@ -56,30 +56,16 @@
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
 
     fetch(csvUrl)
-      .then(response => response.arrayBuffer()) // ← 文字化け対策：バイナリ取得
+      .then(response => response.arrayBuffer())
       .then(buffer => {
-        const decoder = new TextDecoder('utf-8'); // ← UTF-8デコード
+        const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
         const allRows = text.trim().split('\n').map(row => row.split(','));
-
-        // 「順位」「名前」「平均点」の列番号を自動で取得
-        const headerIndex = allRows.findIndex(row =>
-          row.includes('順位') && row.includes('名前') && row.includes('平均点')
-        );
-        if (headerIndex === -1) {
-          console.error('ヘッダーが見つかりませんでした');
-          return;
-        }
-
-        const headers = allRows[headerIndex];
-        const rankIdx = headers.indexOf('順位');
-        const nameIdx = headers.indexOf('名前');
-        const scoreIdx = headers.indexOf('平均点');
 
         const table = document.getElementById('ranking-table');
         table.innerHTML = '';
 
-        // 表のヘッダー行を追加
+        // 表のヘッダー行
         const header = document.createElement('tr');
         ['順位', '名前', '平均点'].forEach(text => {
           const th = document.createElement('th');
@@ -88,14 +74,14 @@
         });
         table.appendChild(header);
 
-        // データ行を追加
-        for (let i = headerIndex + 1; i < allRows.length; i++) {
-          const row = allRows[i];
-          const rank = row[rankIdx]?.trim();
-          const name = row[nameIdx]?.trim();
-          const score = row[scoreIdx]?.trim();
+        // データ行の追加（L: index 11, M: index 12, N: index 13）
+        allRows.forEach((row, i) => {
+          const rank = row[11]?.trim(); // L列
+          const name = row[12]?.trim(); // M列
+          const score = row[13]?.trim(); // N列
 
-          if (!rank && !name && !score) continue;
+          // 空白行はスキップ
+          if (!rank && !name && !score) return;
 
           const tr = document.createElement('tr');
           [rank, name, score].forEach(text => {
@@ -104,7 +90,7 @@
             tr.appendChild(td);
           });
           table.appendChild(tr);
-        }
+        });
       })
       .catch(error => {
         console.error('CSV読み込みエラー:', error);
