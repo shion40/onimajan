@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>鬼麻雀部 - 総合ランキング</title>
+  <style>
+    body {
+      background: #f8f8f8;
+      font-family: 'Arial', sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007acc;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f0f0f0;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .back-link a {
+      color: #007acc;
+      text-decoration: none;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>鬼麻雀部 - 総合ランキング</h1>
+
+  <table id="ranking-table"></table>
+
+  <div class="back-link">
+    <a href="top.html">← トップページに戻る</a>
+  </div>
+
+  <script>
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?output=csv';
+
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(csv => {
+        const allRows = csv.trim().split('\n').map(row => row.split(','));
+
+        const table = document.getElementById('ranking-table');
+        table.innerHTML = '';
+
+        // 手動で見出し行を追加
+        const header = document.createElement('tr');
+        ['順位', '名前', '平均点'].forEach(text => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          header.appendChild(th);
+        });
+        table.appendChild(header);
+
+        allRows.forEach((row, rowIndex) => {
+          // L列=11, M=12, N=13（0-index）
+          const cols = row.slice(11, 14);
+
+          // 空行をスキップ
+          if (cols.every(cell => cell.trim() === '')) return;
+
+          // データ行の描画
+          const tr = document.createElement('tr');
+          cols.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        });
+      })
+      .catch(error => {
+        console.error('CSV読み込みエラー:', error);
+      });
+  </script>
+</body>
+</html>

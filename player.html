@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>鬼麻雀部 - プレイヤー検索</title>
+  <style>
+    body {
+      background: #f8f8f8;
+      font-family: 'Arial', sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .search-box {
+      text-align: center;
+      margin: 20px;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      font-size: 16px;
+      width: 200px;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      margin-left: 10px;
+    }
+
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007acc;
+      color: white;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .back-link a {
+      color: #007acc;
+      text-decoration: none;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>鬼麻雀部 - プレイヤー検索</h1>
+
+  <div class="search-box">
+    <input type="text" id="player-name" placeholder="プレイヤー名を入力">
+    <button onclick="searchPlayer()">検索</button>
+  </div>
+
+  <table id="result-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>名前</th><th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
+        <th>3位</th><th>4位</th><th>プレイ数</th><th>役満回数</th>
+      </tr>
+    </thead>
+    <tbody id="result-body"></tbody>
+  </table>
+
+  <div class="back-link">
+    <a href="top.html">← トップページに戻る</a>
+  </div>
+
+  <script>
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?output=csv';
+    let allRows = [];
+
+    fetch(csvUrl)
+      .then(res => res.text())
+      .then(csv => {
+        allRows = csv.trim().split('\n').map(r => r.split(','));
+      });
+
+    function searchPlayer() {
+      const name = document.getElementById('player-name').value.trim();
+      if (!name) return;
+
+      const resultBody = document.getElementById('result-body');
+      resultBody.innerHTML = '';
+
+      const player = allRows.find((row, index) => index > 0 && row[0] === name);
+
+      if (player) {
+        const tr = document.createElement('tr');
+        player.slice(0, 9).forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        resultBody.appendChild(tr);
+        document.getElementById('result-table').style.display = 'table';
+      } else {
+        resultBody.innerHTML = '<tr><td colspan="9">該当プレイヤーが見つかりませんでした</td></tr>';
+        document.getElementById('result-table').style.display = 'table';
+      }
+    }
+  </script>
+</body>
+</html>
