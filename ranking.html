@@ -53,7 +53,7 @@
   </div>
 
   <script>
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?output=csv';
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
 
     fetch(csvUrl)
       .then(response => response.arrayBuffer()) // ← 文字化け対策：バイナリ取得
