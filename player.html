@@ -109,6 +109,7 @@
         const name = row[0]?.trim();
         const data = row.slice(1, 9).map(cell => cell?.trim() || '');
         const jantamaId = row[9]?.trim() || '';
+　　　　const averageScore = parseFloat(row[1]?.trim()).toFixed(2); // 平均点の部分を小数第2位に
 
         if (!name) continue;
 
