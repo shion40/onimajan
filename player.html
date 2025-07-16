@@ -49,6 +49,10 @@
       color: white;
     }
 
+    tr.highlight {
+      background-color: #ffffcc;
+    }
+
     .back-link {
       text-align: center;
       margin-top: 30px;
@@ -91,37 +95,46 @@
       .then(res => res.text())
       .then(text => {
         allRows = text.trim().split('\n').map(row => row.split(','));
+        renderTable();  // 初回表示
       });
+
+    function renderTable(highlightName = null) {
+      const resultBody = document.getElementById('result-body');
+      resultBody.innerHTML = '';
+
+      const otherRows = [];
+
+      for (let i = 0; i < allRows.length; i++) {
+        const row = allRows[i];
+        const name = row[0]?.trim();
+        const data = row.slice(1, 9).map(cell => cell?.trim() || '');
+
+        if (!name) continue;
+
+        const tr = document.createElement('tr');
+        data.forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+
+        if (highlightName && name === highlightName) {
+          tr.classList.add('highlight');
+          resultBody.prepend(tr);
+        } else {
+          otherRows.push(tr);
+        }
+      }
+
+      otherRows.forEach(tr => resultBody.appendChild(tr));
+
+      document.getElementById('result-table').style.display = 'table';
+    }
 
     function searchPlayer() {
       const name = document.getElementById('player-name').value.trim();
       if (!name) return;
-
-      const resultBody = document.getElementById('result-body');
-      resultBody.innerHTML = '';
-      let found = false;
-
-      // 1行目以降からA列に一致する行を探す
-      for (let i = 0; i < allRows.length; i++) {
-        const row = allRows[i];
-        if (row[0]?.trim() === name) {
-          const tr = document.createElement('tr');
-          for (let j = 1; j <= 8; j++) {  // B列〜I列 = index 1〜8
-            const td = document.createElement('td');
-            td.textContent = row[j]?.trim() || '';
-            tr.appendChild(td);
-          }
-          resultBody.appendChild(tr);
-          found = true;
-          break;
-        }
-      }
-
-      document.getElementById('result-table').style.display = 'table';
-
-      if (!found) {
-        resultBody.innerHTML = '<tr><td colspan="8">該当プレイヤーが見つかりませんでした</td></tr>';
-      }
+      renderTable(name);
     }
   </script>
 </body>
