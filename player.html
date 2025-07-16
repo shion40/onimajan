@@ -108,7 +108,7 @@
         const row = allRows[i];
         const name = row[0]?.trim();
         const data = row.slice(1, 9).map(cell => cell?.trim() || '');
-        const jantamaId = row[10]?.trim() || '';
+        const jantamaId = row[9]?.trim() || '';
 
         if (!name) continue;
 
@@ -126,7 +126,7 @@
           tr.appendChild(td);
         });
 
-        // 雀魂ID（K列 = index 10）
+        // 雀魂ID（J列 = index 9）
         const idCell = document.createElement('td');
         idCell.textContent = jantamaId;
         tr.appendChild(idCell);
