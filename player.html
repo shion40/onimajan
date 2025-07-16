@@ -77,7 +77,7 @@
     <thead>
       <tr>
         <th>名前</th><th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
-        <th>3位</th><th>4位</th><th>プレイ数</th><th>役満回数</th>
+        <th>3位</th><th>4位</th><th>プレイ数</th><th>役満回数</th><th>雀魂ID</th>
       </tr>
     </thead>
     <tbody id="result-body"></tbody>
@@ -104,26 +104,32 @@
 
       const otherRows = [];
 
-      for (let i = 1; i < allRows.length; i++) {  // ← 1行目はスキップ
+      for (let i = 1; i < allRows.length; i++) {  // 1行目はスキップ（見出し）
         const row = allRows[i];
         const name = row[0]?.trim();
         const data = row.slice(1, 9).map(cell => cell?.trim() || '');
+        const jantamaId = row[10]?.trim() || '';
 
         if (!name) continue;
 
         const tr = document.createElement('tr');
 
-        // 名前のセル（A列）
+        // 名前
         const nameCell = document.createElement('td');
         nameCell.textContent = name;
         tr.appendChild(nameCell);
 
-        // B列〜I列の成績
+        // 成績データ B〜I列
         data.forEach(cell => {
           const td = document.createElement('td');
           td.textContent = cell;
           tr.appendChild(td);
         });
+
+        // 雀魂ID（K列 = index 10）
+        const idCell = document.createElement('td');
+        idCell.textContent = jantamaId;
+        tr.appendChild(idCell);
 
         if (highlightName && name === highlightName) {
           tr.classList.add('highlight');
