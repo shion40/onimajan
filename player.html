@@ -34,7 +34,7 @@
     table {
       margin: 20px auto;
       border-collapse: collapse;
-      width: 90%;
+      width: 95%;
       background: white;
     }
 
@@ -76,7 +76,7 @@
   <table id="result-table" style="display:none;">
     <thead>
       <tr>
-        <th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
+        <th>名前</th><th>平均点</th><th>総得点</th><th>1位</th><th>2位</th>
         <th>3位</th><th>4位</th><th>プレイ数</th><th>役満回数</th>
       </tr>
     </thead>
@@ -95,7 +95,7 @@
       .then(res => res.text())
       .then(text => {
         allRows = text.trim().split('\n').map(row => row.split(','));
-        renderTable();  // 初回表示
+        renderTable();  // 初期表示
       });
 
     function renderTable(highlightName = null) {
@@ -104,7 +104,7 @@
 
       const otherRows = [];
 
-      for (let i = 0; i < allRows.length; i++) {
+      for (let i = 1; i < allRows.length; i++) {  // ← 1行目はスキップ
         const row = allRows[i];
         const name = row[0]?.trim();
         const data = row.slice(1, 9).map(cell => cell?.trim() || '');
@@ -112,6 +112,13 @@
         if (!name) continue;
 
         const tr = document.createElement('tr');
+
+        // 名前のセル（A列）
+        const nameCell = document.createElement('td');
+        nameCell.textContent = name;
+        tr.appendChild(nameCell);
+
+        // B列〜I列の成績
         data.forEach(cell => {
           const td = document.createElement('td');
           td.textContent = cell;
@@ -127,7 +134,6 @@
       }
 
       otherRows.forEach(tr => resultBody.appendChild(tr));
-
       document.getElementById('result-table').style.display = 'table';
     }
 
