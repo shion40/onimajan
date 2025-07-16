@@ -49,8 +49,30 @@
     .notice {
       text-align: center;
       font-size: 24px;
- 　   color: #333;
+      color: #333;
       margin-top: 10px;
+    }
+
+    /* 新たに追加されたスタイル */
+    .sheet-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .sheet-link a {
+      font-size: 18px;
+      color: #007acc;
+      text-decoration: none;
+      background-color: #f8f8f8;
+      padding: 10px 20px;
+      border: 1px solid #007acc;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .sheet-link a:hover {
+      background-color: #007acc;
+      color: white;
     }
   </style>
 </head>
@@ -64,5 +86,12 @@
     <a href="ranking.html">🏆 ランキングページ</a>
   </nav>
   <p class="notice">↑ ページに飛んで数秒待てば表示されるよ！</p>
+
+  <!-- 新たに追加された部分 -->
+  <div class="sheet-link">
+    <a href="https://docs.google.com/spreadsheets/d/18favKRJDx1diJqbB4UlVHTiBZgzQsrjII78nDM2yiAI/edit?gid=882713357#gid=882713357" target="_blank">
+      スプレッドシートを確認する
+    </a>
+  </div>
 </body>
 </html>
