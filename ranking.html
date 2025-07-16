@@ -81,9 +81,19 @@
           const name = row[12]?.trim(); // M列
           const score = row[13]?.trim(); // N列
 
-          if (!rank && !name && !score) continue; // 空行スキップ
+          if (!rank || !name || !score) continue; // 空行スキップ
 
           const tr = document.createElement('tr');
+
+          // 順位ごとに背景色を変更
+          if (rank === '1') {
+            tr.style.backgroundColor = '#ffeb3b'; // 黄色
+          } else if (rank === '2') {
+            tr.style.backgroundColor = '#b0b0b0'; // 銀色
+          } else if (rank === '3') {
+            tr.style.backgroundColor = '#cd7f32'; // 銅色
+          }
+
           [rank, name, score].forEach(text => {
             const td = document.createElement('td');
             td.textContent = text;
