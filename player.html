@@ -16,7 +16,7 @@
     .back-link { text-align:center; margin-top:30px; }
     .back-link a { color:#007acc; text-decoration:none; font-size:16px; }
 
-    /* ▼ 追加: ソート用見た目 */
+    /* ソート用 */
     th.sortable { cursor:pointer; position:relative; }
     th.sortable .arrow { margin-left:6px; font-size:12px; opacity:0.85; }
   </style>
@@ -46,41 +46,34 @@
   <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
 
-    // 内部状態
-    let header = [];
-    let rows = [];           // { name, avg, total, rank1, rank2, rank3, rank4, plays, yakuman, jantama }
+    let rows = [];
     let currentHighlight = null;
-    let sortKey = null;      // 'avg' | 'total' | 'plays' | 'yakuman'
-    let sortDir = 'desc';    // 'asc' | 'desc'
+    let sortKey = null;
+    let sortDir = 'desc';
 
-    // CSV取得
     fetch(csvUrl)
       .then(res => res.text())
       .then(text => {
         const allRows = text.trim().split('\n').map(line => safeSplitCSV(line));
-        header = allRows[0] || [];
-
-        // 1行目はヘッダー。2行目以降をパース
         rows = allRows.slice(1).map(r => {
-          const name     = (r[0] || '').trim();
-          const avg      = toNumber(r[1]);  // 平均点（小数）
-          const total    = toNumber(r[2]);  // 総得点
-          const rank1    = toNumber(r[3]);
-          const rank2    = toNumber(r[4]);
-          const rank3    = toNumber(r[5]);
-          const rank4    = toNumber(r[6]);
-          const plays    = toNumber(r[7]);  // プレイ数
-          const yakuman  = toNumber(r[8]);  // 役満回数
-          const jantama  = (r[9] || '').trim();
-
-          return { name, avg, total, rank1, rank2, rank3, rank4, plays, yakuman, jantama };
+          return {
+            name: (r[0] || '').trim(),
+            avg: toNumber(r[1]),
+            total: toNumber(r[2]),
+            rank1: toNumber(r[3]),
+            rank2: toNumber(r[4]),
+            rank3: toNumber(r[5]),
+            rank4: toNumber(r[6]),
+            plays: toNumber(r[7]),
+            yakuman: toNumber(r[8]),
+            jantama: (r[9] || '').trim()
+          };
         }).filter(x => x.name);
 
         setupSortableHeaders();
         renderTable();
       });
 
-    // CSVの1行を安全に分割（引用付きカンマ対応の簡易版）
     function safeSplitCSV(line) {
       const out = [];
       let cur = '';
@@ -119,10 +112,9 @@
         const label = th.textContent.trim();
         if (labelToKey[label]) {
           th.classList.add('sortable');
-          // 矢印領域
           const arrow = document.createElement('span');
           arrow.className = 'arrow';
-          arrow.textContent = '';
+          arrow.textContent = '△'; // 常に△表示
           th.appendChild(arrow);
 
           th.addEventListener('click', () => {
@@ -131,7 +123,7 @@
               sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
             } else {
               sortKey = key;
-              sortDir = 'desc'; // 数値は降順初期が見やすい
+              sortDir = 'desc';
             }
             updateHeaderArrows();
             renderTable(currentHighlight);
@@ -149,7 +141,6 @@
         '役満回数': 'yakuman'
       };
       ths.forEach(th => {
-        // 最初のテキストノード（見出しラベル）
         const labelNode = Array.from(th.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
         const label = (labelNode?.nodeValue || '').trim();
         const arrow = th.querySelector('.arrow');
@@ -157,7 +148,7 @@
         if (labelToKey[label] === sortKey) {
           arrow.textContent = sortDir === 'asc' ? '▲' : '▼';
         } else {
-          arrow.textContent = '';
+          arrow.textContent = '△'; // 非選択は常に△
         }
       });
     }
@@ -175,13 +166,12 @@
     }
 
     function renderTable(highlightName = null) {
-      currentHighlight = highlightName; // 検索で渡された名前を保持
+      currentHighlight = highlightName;
       const resultBody = document.getElementById('result-body');
       resultBody.innerHTML = '';
 
       const sorted = getSortedRows();
 
-      // ハイライト対象があれば、先頭に固定
       if (highlightName) {
         const idx = sorted.findIndex(r => r.name === highlightName);
         if (idx >= 0) {
@@ -194,10 +184,7 @@
         const tr = document.createElement('tr');
         if (highlightName && r.name === highlightName) tr.classList.add('highlight');
 
-        // 名前
         appendCell(tr, r.name);
-
-        // 成績データ B〜I列
         appendCell(tr, r.avg != null ? r.avg.toFixed(2) : '');
         appendCell(tr, fmtInt(r.total));
         appendCell(tr, fmtInt(r.rank1));
@@ -206,15 +193,13 @@
         appendCell(tr, fmtInt(r.rank4));
         appendCell(tr, fmtInt(r.plays));
         appendCell(tr, fmtInt(r.yakuman));
-
-        // 雀魂ID
         appendCell(tr, r.jantama);
 
         resultBody.appendChild(tr);
       }
 
       document.getElementById('result-table').style.display = 'table';
-      updateHeaderArrows(); // 表示後に矢印更新
+      updateHeaderArrows();
     }
 
     function appendCell(tr, text) {
@@ -228,7 +213,6 @@
       return Math.round(v).toString();
     }
 
-    // 検索（ハイライトして先頭に出す）
     function searchPlayer() {
       const name = document.getElementById('player-name').value.trim();
       if (!name) return renderTable(null);
