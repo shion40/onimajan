@@ -4,65 +4,21 @@
   <meta charset="UTF-8">
   <title>鬼麻雀部 - プレイヤー検索</title>
   <style>
-    body {
-      background: #f8f8f8;
-      font-family: 'Arial', sans-serif;
-      padding: 20px;
-    }
+    body { background:#f8f8f8; font-family:'Arial', sans-serif; padding:20px; }
+    h1 { text-align:center; }
+    .search-box { text-align:center; margin:20px; }
+    input[type="text"] { padding:8px; font-size:16px; width:200px; }
+    button { padding:8px 16px; font-size:16px; margin-left:10px; }
+    table { margin:20px auto; border-collapse:collapse; width:95%; background:white; }
+    th, td { border:1px solid #ccc; padding:10px; text-align:center; }
+    th { background-color:#007acc; color:white; user-select:none; }
+    tr.highlight { background-color:#ffffcc; }
+    .back-link { text-align:center; margin-top:30px; }
+    .back-link a { color:#007acc; text-decoration:none; font-size:16px; }
 
-    h1 {
-      text-align: center;
-    }
-
-    .search-box {
-      text-align: center;
-      margin: 20px;
-    }
-
-    input[type="text"] {
-      padding: 8px;
-      font-size: 16px;
-      width: 200px;
-    }
-
-    button {
-      padding: 8px 16px;
-      font-size: 16px;
-      margin-left: 10px;
-    }
-
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 95%;
-      background: white;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-
-    th {
-      background-color: #007acc;
-      color: white;
-    }
-
-    tr.highlight {
-      background-color: #ffffcc;
-    }
-
-    .back-link {
-      text-align: center;
-      margin-top: 30px;
-    }
-
-    .back-link a {
-      color: #007acc;
-      text-decoration: none;
-      font-size: 16px;
-    }
+    /* ▼ 追加: ソート用見た目 */
+    th.sortable { cursor:pointer; position:relative; }
+    th.sortable .arrow { margin-left:6px; font-size:12px; opacity:0.85; }
   </style>
 </head>
 <body>
@@ -89,64 +45,193 @@
 
   <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
-    let allRows = [];
 
+    // 内部状態
+    let header = [];
+    let rows = [];           // { name, avg, total, rank1, rank2, rank3, rank4, plays, yakuman, jantama }
+    let currentHighlight = null;
+    let sortKey = null;      // 'avg' | 'total' | 'plays' | 'yakuman'
+    let sortDir = 'desc';    // 'asc' | 'desc'
+
+    // CSV取得
     fetch(csvUrl)
       .then(res => res.text())
       .then(text => {
-        allRows = text.trim().split('\n').map(row => row.split(','));
-        renderTable();  // 初期表示
+        const allRows = text.trim().split('\n').map(line => safeSplitCSV(line));
+        header = allRows[0] || [];
+
+        // 1行目はヘッダー。2行目以降をパース
+        rows = allRows.slice(1).map(r => {
+          const name     = (r[0] || '').trim();
+          const avg      = toNumber(r[1]);  // 平均点（小数）
+          const total    = toNumber(r[2]);  // 総得点
+          const rank1    = toNumber(r[3]);
+          const rank2    = toNumber(r[4]);
+          const rank3    = toNumber(r[5]);
+          const rank4    = toNumber(r[6]);
+          const plays    = toNumber(r[7]);  // プレイ数
+          const yakuman  = toNumber(r[8]);  // 役満回数
+          const jantama  = (r[9] || '').trim();
+
+          return { name, avg, total, rank1, rank2, rank3, rank4, plays, yakuman, jantama };
+        }).filter(x => x.name);
+
+        setupSortableHeaders();
+        renderTable();
       });
 
+    // CSVの1行を安全に分割（引用付きカンマ対応の簡易版）
+    function safeSplitCSV(line) {
+      const out = [];
+      let cur = '';
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+          else { inQ = !inQ; }
+        } else if (ch === ',' && !inQ) {
+          out.push(cur); cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      out.push(cur);
+      return out;
+    }
+
+    function toNumber(v) {
+      if (v == null) return null;
+      const n = parseFloat(String(v).replace(/,/g, '').trim());
+      return isNaN(n) ? null : n;
+    }
+
+    function setupSortableHeaders() {
+      const ths = document.querySelectorAll('#result-table thead th');
+      const labelToKey = {
+        '平均点': 'avg',
+        '総得点': 'total',
+        'プレイ数': 'plays',
+        '役満回数': 'yakuman'
+      };
+
+      ths.forEach(th => {
+        const label = th.textContent.trim();
+        if (labelToKey[label]) {
+          th.classList.add('sortable');
+          // 矢印領域
+          const arrow = document.createElement('span');
+          arrow.className = 'arrow';
+          arrow.textContent = '';
+          th.appendChild(arrow);
+
+          th.addEventListener('click', () => {
+            const key = labelToKey[label];
+            if (sortKey === key) {
+              sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+              sortKey = key;
+              sortDir = 'desc'; // 数値は降順初期が見やすい
+            }
+            updateHeaderArrows();
+            renderTable(currentHighlight);
+          });
+        }
+      });
+    }
+
+    function updateHeaderArrows() {
+      const ths = document.querySelectorAll('#result-table thead th');
+      const labelToKey = {
+        '平均点': 'avg',
+        '総得点': 'total',
+        'プレイ数': 'plays',
+        '役満回数': 'yakuman'
+      };
+      ths.forEach(th => {
+        // 最初のテキストノード（見出しラベル）
+        const labelNode = Array.from(th.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        const label = (labelNode?.nodeValue || '').trim();
+        const arrow = th.querySelector('.arrow');
+        if (!arrow) return;
+        if (labelToKey[label] === sortKey) {
+          arrow.textContent = sortDir === 'asc' ? '▲' : '▼';
+        } else {
+          arrow.textContent = '';
+        }
+      });
+    }
+
+    function getSortedRows() {
+      if (!sortKey) return [...rows];
+      const sorted = [...rows].sort((a, b) => {
+        const av = a[sortKey] ?? -Infinity;
+        const bv = b[sortKey] ?? -Infinity;
+        if (av === bv) return 0;
+        return (av < bv) ? -1 : 1;
+      });
+      if (sortDir === 'desc') sorted.reverse();
+      return sorted;
+    }
+
     function renderTable(highlightName = null) {
+      currentHighlight = highlightName; // 検索で渡された名前を保持
       const resultBody = document.getElementById('result-body');
       resultBody.innerHTML = '';
 
-      const otherRows = [];
+      const sorted = getSortedRows();
 
-      for (let i = 1; i < allRows.length; i++) {  // 1行目はスキップ（見出し）
-        const row = allRows[i];
-        const name = row[0]?.trim();
-        const data = row.slice(1, 9).map(cell => cell?.trim() || '');
-        const jantamaId = row[9]?.trim() || '';
-        data[0] = parseFloat(row[1]?.trim()).toFixed(2);
-
-        if (!name) continue;
-
-        const tr = document.createElement('tr');
-
-        // 名前
-        const nameCell = document.createElement('td');
-        nameCell.textContent = name;
-        tr.appendChild(nameCell);
-
-        // 成績データ B〜I列
-        data.forEach(cell => {
-          const td = document.createElement('td');
-          td.textContent = cell;
-          tr.appendChild(td);
-        });
-
-        // 雀魂ID（J列 = index 9）
-        const idCell = document.createElement('td');
-        idCell.textContent = jantamaId;
-        tr.appendChild(idCell);
-
-        if (highlightName && name === highlightName) {
-          tr.classList.add('highlight');
-          resultBody.prepend(tr);
-        } else {
-          otherRows.push(tr);
+      // ハイライト対象があれば、先頭に固定
+      if (highlightName) {
+        const idx = sorted.findIndex(r => r.name === highlightName);
+        if (idx >= 0) {
+          const item = sorted.splice(idx, 1)[0];
+          sorted.unshift(item);
         }
       }
 
-      otherRows.forEach(tr => resultBody.appendChild(tr));
+      for (const r of sorted) {
+        const tr = document.createElement('tr');
+        if (highlightName && r.name === highlightName) tr.classList.add('highlight');
+
+        // 名前
+        appendCell(tr, r.name);
+
+        // 成績データ B〜I列
+        appendCell(tr, r.avg != null ? r.avg.toFixed(2) : '');
+        appendCell(tr, fmtInt(r.total));
+        appendCell(tr, fmtInt(r.rank1));
+        appendCell(tr, fmtInt(r.rank2));
+        appendCell(tr, fmtInt(r.rank3));
+        appendCell(tr, fmtInt(r.rank4));
+        appendCell(tr, fmtInt(r.plays));
+        appendCell(tr, fmtInt(r.yakuman));
+
+        // 雀魂ID
+        appendCell(tr, r.jantama);
+
+        resultBody.appendChild(tr);
+      }
+
       document.getElementById('result-table').style.display = 'table';
+      updateHeaderArrows(); // 表示後に矢印更新
     }
 
+    function appendCell(tr, text) {
+      const td = document.createElement('td');
+      td.textContent = (text ?? '');
+      tr.appendChild(td);
+    }
+
+    function fmtInt(v) {
+      if (v == null || isNaN(v)) return '';
+      return Math.round(v).toString();
+    }
+
+    // 検索（ハイライトして先頭に出す）
     function searchPlayer() {
       const name = document.getElementById('player-name').value.trim();
-      if (!name) return;
+      if (!name) return renderTable(null);
       renderTable(name);
     }
   </script>
