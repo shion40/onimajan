@@ -114,7 +114,7 @@
           th.classList.add('sortable');
           const arrow = document.createElement('span');
           arrow.className = 'arrow';
-          arrow.textContent = '△'; // 常に△表示
+          arrow.textContent = '▼'; // 常に▼表示
           th.appendChild(arrow);
 
           th.addEventListener('click', () => {
@@ -148,7 +148,7 @@
         if (labelToKey[label] === sortKey) {
           arrow.textContent = sortDir === 'asc' ? '▲' : '▼';
         } else {
-          arrow.textContent = '△'; // 非選択は常に△
+          arrow.textContent = '▼'; // 非選択は常に▼
         }
       });
     }
@@ -221,3 +221,4 @@
   </script>
 </body>
 </html>
+
