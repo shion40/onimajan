@@ -46,6 +46,8 @@
 <body>
   <h1>鬼麻雀部 - 総合ランキング</h1>
 
+  <div id="month-selector" style="text-align: center; margin: 20px;"></div>
+
   <table id="ranking-table"></table>
 
   <div class="back-link">
@@ -55,46 +57,156 @@
   <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSO7YS8oJTpi2zfOoIaJJwkvz-g5mSGzPtzaeGIOmx3OUu5Q_ZZHKdhvbAcNiIuVRnCuJoFTAl8NYqi/pub?gid=354767114&single=true&output=csv';
 
+    let allData = [];
+
     fetch(csvUrl)
       .then(response => response.arrayBuffer())
       .then(buffer => {
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
-        const allRows = text.trim().split('\n').map(row => row.split(','));
+        allData = text.trim().split('\n').map(row => row.split(','));
 
-        const table = document.getElementById('ranking-table');
-        table.innerHTML = '';
+        // 月選択ドロップダウンを追加
+        createMonthSelector();
 
-        // 表のヘッダー行
-        const header = document.createElement('tr');
-        ['順位', '名前', '平均点'].forEach(text => {
-          const th = document.createElement('th');
-          th.textContent = text;
-          header.appendChild(th);
-        });
-        table.appendChild(header);
-
-        // データ行の追加（3行目 = index 2 から下）
-        for (let i = 2; i < allRows.length; i++) {
-          const row = allRows[i];
-          const rank = row[11]?.trim(); // L列
-          const name = row[12]?.trim(); // M列
-          const score = row[13]?.trim(); // N列
-
-          if (!rank && !name && !score) continue; // 空行スキップ
-
-          const tr = document.createElement('tr');
-          [rank, name, score].forEach(text => {
-            const td = document.createElement('td');
-            td.textContent = text;
-            tr.appendChild(td);
-          });
-          table.appendChild(tr);
-        }
+        // 初期表示（総合ランキング）
+        displayOverallRanking();
       })
       .catch(error => {
         console.error('CSV読み込みエラー:', error);
       });
+
+    function createMonthSelector() {
+      const selectorContainer = document.getElementById('month-selector');
+      const select = document.createElement('select');
+      select.id = 'month-select';
+      select.innerHTML = '<option value="overall">総合ランキング</option>';
+
+      // 利用可能な月を収集
+      const months = new Set();
+      for (let i = 2; i < allData.length; i++) {
+        const dateStr = allData[i][0]?.trim(); // A列を日付として仮定
+        if (dateStr) {
+          const date = new Date(dateStr);
+          if (!isNaN(date.getTime())) {
+            const month = (date.getMonth() + 1) + '月'; // 月は0-based
+            months.add(month);
+          }
+        }
+      }
+
+      // 月オプションを追加
+      Array.from(months).sort().forEach(month => {
+        const option = document.createElement('option');
+        option.value = month.replace('月', '');
+        option.textContent = month + 'ランキング';
+        select.appendChild(option);
+      });
+
+      select.addEventListener('change', handleMonthChange);
+      selectorContainer.appendChild(select);
+    }
+
+    function handleMonthChange(event) {
+      const selectedValue = event.target.value;
+      if (selectedValue === 'overall') {
+        displayOverallRanking();
+      } else {
+        displayMonthlyRanking(selectedValue);
+      }
+    }
+
+    function displayOverallRanking() {
+      const table = document.getElementById('ranking-table');
+      table.innerHTML = '';
+
+      // 表のヘッダー行
+      const header = document.createElement('tr');
+      ['順位', '名前', '平均点'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        header.appendChild(th);
+      });
+      table.appendChild(header);
+
+      // データ行の追加（3行目 = index 2 から下）
+      for (let i = 2; i < allData.length; i++) {
+        const row = allData[i];
+        const rank = row[11]?.trim(); // L列
+        const name = row[12]?.trim(); // M列
+        const score = row[13]?.trim(); // N列
+
+        if (!rank && !name && !score) continue; // 空行スキップ
+
+        const tr = document.createElement('tr');
+        [rank, name, score].forEach(text => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      }
+    }
+
+    function displayMonthlyRanking(selectedMonth) {
+      const table = document.getElementById('ranking-table');
+      table.innerHTML = '';
+
+      // 表のヘッダー行
+      const header = document.createElement('tr');
+      ['順位', '名前', '平均点'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        header.appendChild(th);
+      });
+      table.appendChild(header);
+
+      // 月ごとのデータを集計
+      const monthlyData = {};
+      for (let i = 2; i < allData.length; i++) {
+        const row = allData[i];
+        const dateStr = row[0]?.trim(); // A列を日付として仮定
+        const name = row[12]?.trim(); // M列 名前
+        const scoreStr = row[13]?.trim(); // N列 平均点 or 点数
+
+        if (!dateStr || !name || !scoreStr) continue;
+
+        const date = new Date(dateStr);
+        const month = date.getMonth() + 1;
+        if (month !== parseInt(selectedMonth)) continue;
+
+        const score = parseFloat(scoreStr);
+        if (isNaN(score)) continue;
+
+        if (!monthlyData[name]) {
+          monthlyData[name] = { scores: [], sum: 0, count: 0 };
+        }
+        monthlyData[name].scores.push(score);
+        monthlyData[name].sum += score;
+        monthlyData[name].count += 1;
+      }
+
+      // 平均点を計算してランキング
+      const rankedData = Object.keys(monthlyData).map(name => {
+        const data = monthlyData[name];
+        return {
+          name: name,
+          average: Math.round(data.sum / data.count * 100) / 100, // 小数点2桁
+          games: data.count
+        };
+      }).sort((a, b) => b.average - a.average); // 平均点降順
+
+      // データ行の追加
+      rankedData.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        [index + 1, item.name, item.average].forEach(text => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+    }
   </script>
 </body>
 </html>
